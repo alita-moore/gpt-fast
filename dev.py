@@ -1,5 +1,4 @@
 # %%
-# NOTE: THIS IS GOING TO FAIL AND THAT's OKAY
 !./scripts/prepare.sh mistralai/Mistral-7B-v0.1
 # %%
 from generate import main
