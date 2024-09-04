@@ -43,6 +43,7 @@ class ModelArgs:
     def from_name(cls, name: str):
         if name in transformer_configs:
             return cls(**transformer_configs[name])
+        
         # fuzzy search
         config = [config for config in transformer_configs if config.lower() in str(name).lower()]
 
@@ -51,7 +52,7 @@ class ModelArgs:
         if len(config) > 1:
             config.sort(key=len, reverse=True)
             assert len(config[0]) != len(config[1]), name # make sure only one 'best' match
-            
+ 
         return cls(**transformer_configs[config[0]])
 
 
