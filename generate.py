@@ -25,8 +25,8 @@ def device_sync(device):
 torch._inductor.config.coordinate_descent_tuning = True
 torch._inductor.config.triton.unique_kernel_names = True
 # Experimental features to reduce compilation times, will be on by default in future
-torch._inductor.config.fx_graph_cache = True 
-torch._functorch.config.enable_autograd_cache = True
+torch._inductor.config.fx_graph_cache = True
+# torch._functorch.config.enable_autograd_cache = True
 
 default_device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
@@ -99,7 +99,7 @@ def speculative_decode(
     orig_input_pos = torch.tensor([input_pos], dtype=torch.int64, device=cur_token.device)
     draft_tokens, draft_probs = decode_n_tokens(draft_model, cur_token.view(1, -1), orig_input_pos.clone(), speculate_k, **sampling_kwargs)
 
-    draft_tokens = torch.cat(draft_tokens)
+    draft_tokens = torch.cat(draft_tokens).squeeze(1) # shiki added .squeeze(1)
     # parallel inference on target model using draft tokens
     target_logits = model_forward(
         model,
@@ -107,7 +107,7 @@ def speculative_decode(
         torch.arange(input_pos, input_pos + speculate_k + 1, device=cur_token.device)
     )
     target_probs = logits_to_probs(target_logits[0], **sampling_kwargs)
-    draft_probs = torch.stack(draft_probs)
+    draft_probs = torch.stack(draft_probs).squeeze(1) # shiki added .squeeze(1)
     # q: target prob, p: draft prob
     # q >= p: always accept draft token
     # q < p: q/p prob to accept draft token
@@ -196,8 +196,8 @@ def generate(
 
             accept_counts[len(next_tokens) - 1] += 1
             num_added = min(T_new - input_pos - 1, len(next_tokens))
-            seq[input_pos + 1 : input_pos + num_added + 1] = next_tokens[: num_added]
-            for i in next_tokens[: num_added,]:
+            seq[:, input_pos + 1 : input_pos + num_added + 1] = next_tokens[: num_added]
+            for i in next_tokens[: num_added]:
                 callback(i)
             input_pos = input_pos + num_added
             next_token = next_tokens[-1]
